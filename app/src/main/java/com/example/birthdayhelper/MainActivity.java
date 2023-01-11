@@ -17,14 +17,18 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 
 import com.example.birthdayhelper.CLASS.Contacto;
 import com.example.birthdayhelper.DB.DBManager;
+import com.example.birthdayhelper.databinding.ActivityMainBinding;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
@@ -35,19 +39,35 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
+    EditText searchName;
     RecyclerView recyclerView;
     int PERMISSIONS_REQUEST_READ_CONTACTS=100;
     DBManager dbManager;
+    ActivityMainBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        dbManager=new DBManager(MainActivity.this,null,null,1);
+
+        searchName = (EditText) findViewById(R.id.searchName);
+
+        searchName.addTextChangedListener(new TextWatcher() {
+
+            public void afterTextChanged(Editable name) {
+                AdapterContactos adapterContactos=new AdapterContactos(dbManager.getSearchContacts(name));
+                recyclerView.setAdapter(adapterContactos);
+            }
+
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        });
+
         recyclerView=findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-
 
 
 
@@ -68,17 +88,9 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        dbManager=new DBManager(MainActivity.this,null,null,1);
+
         dbManager.addContacts(getContactList());
         AdapterContactos adapterContactos=new AdapterContactos(dbManager.getContacts());
-
-
-
-
-
-
-
-
         recyclerView.setAdapter(adapterContactos);
 
 
@@ -139,9 +151,6 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList getContactList() {
         ArrayList<Contacto> contactoArrayList=new ArrayList<>();
-        ArrayList<String> telefonos=new ArrayList<>();
-        String lastName="";
-
         ContentResolver cr = getContentResolver();
         Cursor cur = cr.query(ContactsContract.Contacts.CONTENT_URI,
                 null, null, null, null);
@@ -155,13 +164,7 @@ public class MainActivity extends AppCompatActivity {
 
               String photo = cur.getString(cur.getColumnIndex(
                        ContactsContract.Contacts.PHOTO_ID));
-
-
                 Uri photoUri = ContactsContract.Contacts.getLookupUri(Long.parseLong(id), photo);
-
-
-
-
                 if (cur.getInt(cur.getColumnIndex(
                         ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
                     Cursor pCur = cr.query(
@@ -172,22 +175,12 @@ public class MainActivity extends AppCompatActivity {
                     while (pCur.moveToNext()) {
                         String phoneNo = pCur.getString(pCur.getColumnIndex(
                                 ContactsContract.CommonDataKinds.Phone.NUMBER));
-
-
                         //Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
 
                         //Contacto newContacto=new Contacto(Integer.parseInt(id),name,phoneNo,getPhoto(photoUri));
-
-                        if(lastName.equals(name)){
-
-                        }else{
                             Contacto newContacto=new Contacto(Integer.parseInt(id),name,phoneNo);
                             contactoArrayList.add(newContacto);
-                        }
-
-
                     }
-
                     pCur.close();
                 }
             }
@@ -195,9 +188,7 @@ public class MainActivity extends AppCompatActivity {
         if(cur!=null){
             cur.close();
         }
-
         return contactoArrayList;
     }
-
 
 }

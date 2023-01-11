@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.text.Editable;
 
 import androidx.annotation.Nullable;
 
@@ -81,7 +82,30 @@ public class DBManager extends SQLiteOpenHelper {
         ArrayList <Contacto> contactos=new ArrayList<Contacto>();
         Cursor cursor;
         SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
-        cursor=sqLiteDatabase.rawQuery("SELECT * FROM miscumples",null);
+        cursor=sqLiteDatabase.rawQuery("SELECT * FROM miscumples ORDER BY nombre",null);
+
+        if(cursor.moveToFirst()){
+            do{
+                Contacto contacto=new Contacto();
+                contacto.setIdContacto(cursor.getInt(0));
+                contacto.setTipoNot(cursor.getInt(1));
+                contacto.setMensaje(cursor.getString(2));
+                contacto.setTelefono(cursor.getString(3));
+                contacto.setFechaNac(cursor.getString(4));
+                contacto.setNombre(cursor.getString(5));
+                contactos.add(contacto);
+
+
+            }while (cursor.moveToNext());
+        }
+        cursor.close();
+        return contactos;
+    }
+
+    public ArrayList<Contacto> getSearchContacts(Editable name) {
+        ArrayList <Contacto> contactos=new ArrayList<Contacto>();
+        SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
+        Cursor cursor = sqLiteDatabase.rawQuery("SELECT * FROM miscumples WHERE nombre LIKE '%"+name+"%'ORDER BY nombre", null);
 
         if(cursor.moveToFirst()){
             do{

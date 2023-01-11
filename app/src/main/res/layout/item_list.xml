@@ -53,7 +53,7 @@
                 android:textSize="16sp" />
 
             <TextView
-                android:id="@+id/birthday"
+                android:id="@+id/date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/alata"
@@ -62,7 +62,7 @@
                 android:textSize="16sp" />
 
             <TextView
-                android:id="@+id/alert"
+                android:id="@+id/notification"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/alata"
