@@ -89,9 +89,15 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        dbManager.addContacts(getContactList());
-        AdapterContactos adapterContactos=new AdapterContactos(dbManager.getContacts());
-        recyclerView.setAdapter(adapterContactos);
+        if(dbManager.getContacts().size()!=0) {
+            AdapterContactos adapterContactos = new AdapterContactos(dbManager.getContacts());
+            recyclerView.setAdapter(adapterContactos);
+            dbManager.addContacts(getContactList());
+        }else{
+            dbManager.addContacts(getContactList());
+            AdapterContactos adapterContactos = new AdapterContactos(dbManager.getContacts());
+            recyclerView.setAdapter(adapterContactos);
+        }
 
 
     }

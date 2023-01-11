@@ -22,7 +22,7 @@ public class Contacto implements Serializable {
                 this.idContacto = idContacto;
                 this.nombre = nombre;
                 this.telefono = telefono;
-                this.fechaNac="01-01-0000";
+                this.fechaNac="";
         }
 
         public Contacto(int idContacto, String nombre, String telefono, Bitmap avatar) {
@@ -30,7 +30,7 @@ public class Contacto implements Serializable {
                 this.nombre = nombre;
                 this.telefono = telefono;
                 this.avatar = avatar;
-                this.fechaNac="01-01-0000";
+                this.fechaNac="";
         }
 
         public int getIdContacto() {

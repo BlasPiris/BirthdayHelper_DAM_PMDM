@@ -61,7 +61,7 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
 
     public class ViewHolderContactos extends RecyclerView.ViewHolder {
 
-        TextView name,number,date;
+        TextView name,number,date,notif;
         ImageView avatar;
         ConstraintLayout costrainLayout;
         public ViewHolderContactos(@NonNull View itemView) {
@@ -70,7 +70,8 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
             name=itemView.findViewById(R.id.TextView1);
             number=itemView.findViewById(R.id.phone);
             avatar=itemView.findViewById(R.id.avatar);
-            date=itemView.findViewById(R.id.fechaNac);
+            date=itemView.findViewById(R.id.date);
+            notif=itemView.findViewById(R.id.notification);
             costrainLayout=itemView.findViewById(R.id.costrainLayout);
 
         }
@@ -80,6 +81,16 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
             number.setText(contacto.getTelefono());
             if(contacto.getAvatar()!=null){
                 avatar.setImageBitmap(contacto.getAvatar());
+            }
+
+            if(!contacto.getFechaNac().isEmpty()){
+                date.setText(contacto.getFechaNac());
+            }
+
+            if(contacto.getTipoNot()!=0){
+                notif.setText("SMS y Notificación");
+            }else{
+                notif.setText("Solo Notificación");
             }
 
 

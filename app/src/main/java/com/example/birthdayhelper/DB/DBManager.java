@@ -68,12 +68,6 @@ public class DBManager extends SQLiteOpenHelper {
             cv.put("nombre",contactos.get(i).getNombre());
 
             long res=sqLiteDatabase.insert("miscumples",null,cv);
-
-            if(res!=1){
-                System.out.println("Insertado") ;
-            }else{
-                System.out.println("Fallo insercion");
-            }
         }
 
     }
@@ -123,6 +117,18 @@ public class DBManager extends SQLiteOpenHelper {
         }
         cursor.close();
         return contactos;
+    }
+
+    public void updateContact(Contacto contacto) {
+        SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
+        String query="UPDATE miscumples SET" +
+                " nombre = '"+contacto.getNombre()+"' ," +
+                " telefono = '"+contacto.getTelefono()+"' ," +
+                " FechaNacimiento = '"+contacto.getFechaNac()+"' ," +
+                " TipoNotif = '"+contacto.getTipoNot()+"' ," +
+                " Mensaje = '"+contacto.getMensaje()+"'" +
+                " WHERE id LIKE '"+contacto.getIdContacto()+"'";
+        sqLiteDatabase.execSQL(query);
     }
 
 //    //Método encargado de actualizar contactos de la base de datos

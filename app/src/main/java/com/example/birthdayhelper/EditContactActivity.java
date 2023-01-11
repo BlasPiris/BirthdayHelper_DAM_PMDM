@@ -15,6 +15,7 @@ import android.widget.Spinner;
 import android.widget.Switch;
 
 import com.example.birthdayhelper.CLASS.Contacto;
+import com.example.birthdayhelper.DB.DBManager;
 
 import java.util.ArrayList;
 
@@ -24,6 +25,7 @@ public class EditContactActivity extends AppCompatActivity {
     Spinner tel;
     Switch smsCheck;
     Button openContact,saveContact;
+    Contacto contacto;
 
 
 
@@ -32,7 +34,7 @@ public class EditContactActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_contact);
         Intent i = getIntent();
-        Contacto contacto = (Contacto)i.getSerializableExtra("contacto");
+        contacto = (Contacto)i.getSerializableExtra("contacto");
 
 
         openContact=findViewById(R.id.verContacto);
@@ -62,14 +64,21 @@ public class EditContactActivity extends AppCompatActivity {
         fechaNac.setText(contacto.getFechaNac());
 
         msj=findViewById(R.id.msj);
-        msj.setEnabled(false);
         smsCheck=findViewById(R.id.switchSms);
+        msj.setText(contacto.getMensaje());
+        if(contacto.getTipoNot()!=0){
+            smsCheck.setChecked(true);
+            msj.setEnabled(true);
+        }else{
+            smsCheck.setChecked(false);
+            msj.setEnabled(false);
+        }
+
         smsCheck.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if(isChecked){
                     msj.setEnabled(true);
                 }else{
-                    msj.setText("");
                     msj.setEnabled(false);
                 }
 
@@ -80,6 +89,8 @@ public class EditContactActivity extends AppCompatActivity {
         saveContact.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+
                 saveContact();
             }
         });
@@ -97,6 +108,19 @@ public class EditContactActivity extends AppCompatActivity {
     }
 
     private void saveContact() {
+
+        contacto.setNombre(name.getText().toString());
+        contacto.setTelefono(tel.getSelectedItem().toString());
+        contacto.setFechaNac(fechaNac.getText().toString());
+        if(smsCheck.isChecked()){
+            contacto.setTipoNot(1);
+        }else{
+            contacto.setTipoNot(0);
+        }
+        contacto.setMensaje(msj.getText().toString());
+
+        DBManager dbManager=new DBManager(EditContactActivity.this,null,null,1);
+        dbManager.updateContact(contacto);
         Intent intent = new Intent(EditContactActivity.this, MainActivity.class);
         startActivity(intent);
     }
