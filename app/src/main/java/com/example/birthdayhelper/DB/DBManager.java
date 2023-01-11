@@ -131,6 +131,27 @@ public class DBManager extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(query);
     }
 
+    public ArrayList<Contacto> getBithdayContacts(String fecha) {
+        ArrayList <Contacto> contactos=new ArrayList<Contacto>();
+        SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
+        Cursor cursor = sqLiteDatabase.rawQuery("SELECT * FROM miscumples WHERE fechaNacimiento LIKE '"+fecha+"%'ORDER BY nombre", null);
+
+        if(cursor.moveToFirst()){
+            do{
+                Contacto contacto=new Contacto();
+                contacto.setIdContacto(cursor.getInt(0));
+                contacto.setTipoNot(cursor.getInt(1));
+                contacto.setMensaje(cursor.getString(2));
+                contacto.setTelefono(cursor.getString(3));
+                contacto.setFechaNac(cursor.getString(4));
+                contacto.setNombre(cursor.getString(5));
+                contactos.add(contacto);
+            }while (cursor.moveToNext());
+        }
+        cursor.close();
+        return contactos;
+    }
+
 //    //Método encargado de actualizar contactos de la base de datos
 //    public void updateContactoSQLite(Contacto c) {
 //

@@ -6,8 +6,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -25,6 +32,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.example.birthdayhelper.CLASS.Contacto;
 import com.example.birthdayhelper.DB.DBManager;
@@ -33,8 +41,12 @@ import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
 import java.sql.SQLData;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -43,17 +55,24 @@ public class MainActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     int PERMISSIONS_REQUEST_READ_CONTACTS=100;
     DBManager dbManager;
-    ActivityMainBinding binding;
+
+    AlarmManager alarmManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        createNotificactionChannel();
+
+
+
+
+
+
 
         dbManager=new DBManager(MainActivity.this,null,null,1);
 
         searchName = (EditText) findViewById(R.id.searchName);
-
         searchName.addTextChangedListener(new TextWatcher() {
 
             public void afterTextChanged(Editable name) {
@@ -134,21 +153,21 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //Guardo la hora a la que se va a enviar la notificación
-                Calendar horaNotificacionCumple = Calendar.getInstance();
-                horaNotificacionCumple.set(Calendar.HOUR_OF_DAY, picker.getHour());
-                horaNotificacionCumple.set(Calendar.MINUTE, picker.getMinute());
-                horaNotificacionCumple.set(Calendar.SECOND, 0);
-//                try {
-//                    //Compruebo que contactos hacen hoy los años
-//                    cumpleDeContactos = comprobarCumples();
-//                    idCumpleDeContactos = guardarIdContactosCumple();
-//                } catch (ParseException e) {
-//                    e.printStackTrace();
-//                }
-//                //Lanzo la alarma si hay contactos que hagan los años (Si esta lleno el listado)
-//                if(cumpleDeContactos != null && ! cumpleDeContactos.isEmpty()){
-//                    startAlarma();
-//                }
+                Calendar horaNotificacion = Calendar.getInstance();
+                horaNotificacion.set(Calendar.HOUR_OF_DAY, picker.getHour());
+                horaNotificacion.set(Calendar.MINUTE, picker.getMinute());
+                horaNotificacion.set(Calendar.SECOND, 0);
+                horaNotificacion.set(Calendar.MILLISECOND, 0);
+
+
+                alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+                Intent intent=new Intent(MainActivity.this,AlarmReciver.class);
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, horaNotificacion.getTimeInMillis(),pendingIntent);
+                Toast.makeText(MainActivity.this, "ALARMA ACTIVADA", Toast.LENGTH_SHORT).show();
+
+
+
 
             }
         });
@@ -195,6 +214,18 @@ public class MainActivity extends AppCompatActivity {
             cur.close();
         }
         return contactoArrayList;
+    }
+
+    private  void createNotificactionChannel(){
+        if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
+            NotificationChannel channel=new NotificationChannel("birthdayAlert",
+                    "Birthday Helper Channel", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Canal de Birthday Helper");
+
+            NotificationManager notificationManager=getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+
+        }
     }
 
 }
