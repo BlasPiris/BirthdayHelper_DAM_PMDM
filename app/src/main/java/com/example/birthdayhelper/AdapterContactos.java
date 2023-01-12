@@ -25,6 +25,8 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
         this.contactoArrayList=contactoArrayList;
     }
 
+
+
     @NonNull
     @Override
     public ViewHolderContactos onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {

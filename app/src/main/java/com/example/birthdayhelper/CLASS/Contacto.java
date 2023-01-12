@@ -81,9 +81,7 @@ public class Contacto implements Serializable {
                 this.avatar = avatar;
         }
 
-        public int getTipoNot() {
-                return tipoNot;
-        }
+        public int getTipoNot() {return tipoNot;}
 
         public void setTipoNot(int tipoNot) {
                 this.tipoNot = tipoNot;

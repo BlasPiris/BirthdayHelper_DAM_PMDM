@@ -6,8 +6,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -17,13 +17,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -36,17 +36,13 @@ import android.widget.Toast;
 
 import com.example.birthdayhelper.CLASS.Contacto;
 import com.example.birthdayhelper.DB.DBManager;
-import com.example.birthdayhelper.databinding.ActivityMainBinding;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
 
-import java.sql.SQLData;
-import java.text.SimpleDateFormat;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -63,13 +59,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         createNotificactionChannel();
-
-
-
-
-
-
-
         dbManager=new DBManager(MainActivity.this,null,null,1);
 
         searchName = (EditText) findViewById(R.id.searchName);
@@ -107,19 +96,18 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        ArrayList<Contacto> arrayContactos=getContactList();
+        dbManager.addContacts(arrayContactos);
+        ArrayList<Contacto> arrayContactosdb=dbManager.getContacts();
+        arrayContactos=getFinalList(arrayContactos,arrayContactosdb);
+        AdapterContactos adapterContactos =
+                new AdapterContactos(arrayContactos);
+        recyclerView.setAdapter(adapterContactos);
 
-        if(dbManager.getContacts().size()!=0) {
-            AdapterContactos adapterContactos = new AdapterContactos(dbManager.getContacts());
-            recyclerView.setAdapter(adapterContactos);
-            dbManager.addContacts(getContactList());
-        }else{
-            dbManager.addContacts(getContactList());
-            AdapterContactos adapterContactos = new AdapterContactos(dbManager.getContacts());
-            recyclerView.setAdapter(adapterContactos);
-        }
 
 
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -174,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
     private ArrayList getContactList() {
         ArrayList<Contacto> contactoArrayList=new ArrayList<>();
         ContentResolver cr = getContentResolver();
@@ -182,28 +171,47 @@ public class MainActivity extends AppCompatActivity {
 
         if ((cur != null ? cur.getCount() : 0) > 0) {
             while (cur != null && cur.moveToNext()) {
-                String id = cur.getString(
-                        cur.getColumnIndex(ContactsContract.Contacts._ID));
-                String name = cur.getString(cur.getColumnIndex(
-                        ContactsContract.Contacts.DISPLAY_NAME));
+                 String id = cur.getString(cur.getColumnIndex(ContactsContract.Contacts._ID));
+                 String name = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 
-              String photo = cur.getString(cur.getColumnIndex(
-                       ContactsContract.Contacts.PHOTO_ID));
+              String photo = cur.getString(cur.getColumnIndex(ContactsContract.Contacts.PHOTO_ID));
                 Uri photoUri = ContactsContract.Contacts.getLookupUri(Long.parseLong(id), photo);
-                if (cur.getInt(cur.getColumnIndex(
-                        ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
+                if (cur.getInt(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER)) > 0) {
                     Cursor pCur = cr.query(
                             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                             null,
                             ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
                             new String[]{id}, null);
                     while (pCur.moveToNext()) {
-                        String phoneNo = pCur.getString(pCur.getColumnIndex(
-                                ContactsContract.CommonDataKinds.Phone.NUMBER));
-                        //Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
+                        String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
-                        //Contacto newContacto=new Contacto(Integer.parseInt(id),name,phoneNo,getPhoto(photoUri));
-                            Contacto newContacto=new Contacto(Integer.parseInt(id),name,phoneNo);
+                        Contacto newContacto=new Contacto(Integer.parseInt(id),name,phoneNo);
+                   if(photoUri!=null){
+                       Bitmap foto = null;
+
+                       //Uso el método de clase openContactPhotoInputStream()
+                       try {
+                           InputStream input =
+                                   ContactsContract.Contacts.openContactPhotoInputStream(
+                                           getContentResolver(),
+                                           ContentUris.withAppendedId(
+                                                   ContactsContract.Contacts.CONTENT_URI,
+                                                   Long.parseLong(id))
+                                   );
+                           if (input != null) {
+                               //Dar formato tipo Bitmap a los bytes del BLOB correspondiente a la foto
+                               foto = BitmapFactory.decodeStream(input);
+                               input.close();
+                           }
+
+                       } catch (IOException iox) { /* Manejo de errores */ }
+
+                       System.out.println("HOLA PROBANDO "+name);
+
+                        newContacto.setAvatar(foto);
+                   }
+
+
                             contactoArrayList.add(newContacto);
                     }
                     pCur.close();
@@ -216,6 +224,16 @@ public class MainActivity extends AppCompatActivity {
         return contactoArrayList;
     }
 
+    private ArrayList<Contacto> getFinalList(ArrayList<Contacto> arrayContactos, ArrayList<Contacto> arrayContactosdb) {
+
+        for(int i=0;i<arrayContactosdb.size();i++){
+            arrayContactosdb.get(i).setAvatar(arrayContactos.get(i).getAvatar());
+        }
+
+        return arrayContactosdb;
+    }
+
+
     private  void createNotificactionChannel(){
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
             NotificationChannel channel=new NotificationChannel("birthdayAlert",
@@ -227,5 +245,5 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-
+    
 }

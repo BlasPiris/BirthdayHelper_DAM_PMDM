@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.telephony.SmsManager;
 import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
@@ -71,5 +72,19 @@ public class AlarmReciver extends BroadcastReceiver {
         }
 
     private void sendSMS(Context context, Intent intent, ArrayList<Contacto> contactos) {
+
+        for (int i = 0; i < contactos.size(); i++) {
+            if(contactos.get(i).getTipoNot()==1) {
+                try {
+                    SmsManager smsManager = SmsManager.getDefault();
+                    smsManager.sendTextMessage(contactos.get(i).getTelefono(), null, contactos.get(i).getMensaje(), null, null);
+                } catch (Exception e) {
+                    Toast.makeText(context.getApplicationContext(),
+                            "SMS no enviado, por favor, inténtalo otra vez.",
+                            Toast.LENGTH_LONG).show();
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
