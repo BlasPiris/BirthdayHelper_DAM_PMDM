@@ -2,6 +2,7 @@ package com.example.birthdayhelper;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.birthdayhelper.CLASS.Contacto;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.ViewHolderContactos> {
@@ -24,8 +26,6 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
     public AdapterContactos(ArrayList<Contacto> contactoArrayList) {
         this.contactoArrayList=contactoArrayList;
     }
-
-
 
     @NonNull
     @Override
@@ -44,8 +44,12 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
             public void onClick(View v) {
 
                 Intent intent = new Intent(mContext, EditContactActivity.class);
-                intent.putExtra("contacto", contato);
+                Bitmap image=contato.getAvatar();
+                intent.putExtra("img", image);
+                contato.setAvatar(null);
+                intent.putExtra("contacto", (Serializable) contato);
                 mContext.startActivity(intent);
+                contato.setAvatar(image);
 
             }
 
@@ -62,12 +66,10 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
 
 
     public class ViewHolderContactos extends RecyclerView.ViewHolder {
-
         TextView name,number,date,notif;
         ImageView avatar;
         ConstraintLayout costrainLayout;
         public ViewHolderContactos(@NonNull View itemView) {
-
             super(itemView);
             name=itemView.findViewById(R.id.TextView1);
             number=itemView.findViewById(R.id.phone);
@@ -78,6 +80,7 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
 
         }
 
+        //MÉTODO QUE ASIGNA LOS DATOS DEL CONTACTO A LA PANTALLA
         public void asignarDatos(Contacto contacto) {
             name.setText(contacto.getNombre());
             number.setText(contacto.getTelefono());
@@ -94,11 +97,6 @@ public class AdapterContactos extends RecyclerView.Adapter<AdapterContactos.View
             }else{
                 notif.setText("Solo Notificación");
             }
-
-
-
-
-
         }
     }
 }

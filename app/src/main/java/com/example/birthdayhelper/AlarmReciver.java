@@ -38,8 +38,7 @@ public class AlarmReciver extends BroadcastReceiver {
 
     }
 
-
-
+    //MÉTODO QUE MANDA LA NOTIFICACION AL DISPOSITIVO ANDROID
     public void sendNotification(Context context, Intent intent, ArrayList<Contacto> contactos){
         Intent intent1=new Intent(context,MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -54,10 +53,6 @@ public class AlarmReciver extends BroadcastReceiver {
                     nombres += ", " + contactos.get(i).getNombre();
                 }
             }
-
-
-
-
         NotificationCompat.Builder builder=new NotificationCompat.Builder(context,"birthdayAlert")
                 .setSmallIcon(R.drawable.icon_256x256)
                 .setContentTitle("Cumpleaños de Hoy")
@@ -71,6 +66,7 @@ public class AlarmReciver extends BroadcastReceiver {
         }
         }
 
+        //MÉTODO QUE MANDA LOS SMS A LOS CONTACTOS
     private void sendSMS(Context context, Intent intent, ArrayList<Contacto> contactos) {
 
         for (int i = 0; i < contactos.size(); i++) {
@@ -79,9 +75,6 @@ public class AlarmReciver extends BroadcastReceiver {
                     SmsManager smsManager = SmsManager.getDefault();
                     smsManager.sendTextMessage(contactos.get(i).getTelefono(), null, contactos.get(i).getMensaje(), null, null);
                 } catch (Exception e) {
-                    Toast.makeText(context.getApplicationContext(),
-                            "SMS no enviado, por favor, inténtalo otra vez.",
-                            Toast.LENGTH_LONG).show();
                     e.printStackTrace();
                 }
             }

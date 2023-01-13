@@ -16,12 +16,12 @@ import java.util.ArrayList;
 public class DBManager extends SQLiteOpenHelper {
 
 
-
     public DBManager(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
         super(context,"BH_PMDM.db", null, 1);
     }
 
 
+    //MÉTODO QUE CREA LA BASE DE DATOS EN CASO DE NO EXISTIR
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
         String query="CREATE TABLE IF NOT EXISTS miscumples(ID integer PRIMARY KEY,TipoNotif char(1),Mensaje VARCHAR(160),Telefono" +
@@ -36,29 +36,10 @@ public class DBManager extends SQLiteOpenHelper {
         onCreate(sqLiteDatabase);
     }
 
-    public String addRecord(Contacto contacto){
-        SQLiteDatabase sqLiteDatabase=this.getReadableDatabase();
-        ContentValues cv=new ContentValues();
-        cv.put("id",contacto.getIdContacto());
-        cv.put("tipoNotif",contacto.getTipoNot());
-        cv.put("mensaje",contacto.getMensaje());
-        cv.put("telefono",contacto.getTelefono());
-        cv.put("fechaNacimiento",contacto.getFechaNac());
-        cv.put("nombre",contacto.getNombre());
-
-        long res=sqLiteDatabase.insert("miscumples",null,cv);
-
-        if(res!=1){
-            return "Insertado";
-        }else{
-            return "Fallo insercion";
-        }
-    }
-
+    //MÉTODO QUE ALMACENA LOS CONTACTOS EN LA BASE DE DATOS
     public void addContacts(ArrayList<Contacto> contactos){
-
+        SQLiteDatabase sqLiteDatabase=this.getReadableDatabase();
         for(int i=0;i<contactos.size();i++){
-            SQLiteDatabase sqLiteDatabase=this.getReadableDatabase();
             ContentValues cv=new ContentValues();
             cv.put("id",contactos.get(i).getIdContacto());
             cv.put("tipoNotif",contactos.get(i).getTipoNot());
@@ -66,12 +47,12 @@ public class DBManager extends SQLiteOpenHelper {
             cv.put("telefono",contactos.get(i).getTelefono());
             cv.put("fechaNacimiento",contactos.get(i).getFechaNac());
             cv.put("nombre",contactos.get(i).getNombre());
-
-            long res=sqLiteDatabase.insert("miscumples",null,cv);
+            sqLiteDatabase.insert("miscumples",null,cv);
         }
 
     }
 
+    //MÉTODO QUE OBTIENE LOS CONTACTOS DE LA BASE DE DATOS
     public ArrayList<Contacto> getContacts() {
         ArrayList <Contacto> contactos=new ArrayList<Contacto>();
         Cursor cursor;
@@ -88,37 +69,14 @@ public class DBManager extends SQLiteOpenHelper {
                 contacto.setFechaNac(cursor.getString(4));
                 contacto.setNombre(cursor.getString(5));
                 contactos.add(contacto);
-
-
             }while (cursor.moveToNext());
         }
         cursor.close();
         return contactos;
     }
 
-    public ArrayList<Contacto> getSearchContacts(Editable name) {
-        ArrayList <Contacto> contactos=new ArrayList<Contacto>();
-        SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
-        Cursor cursor = sqLiteDatabase.rawQuery("SELECT * FROM miscumples WHERE nombre LIKE '%"+name+"%'ORDER BY nombre", null);
 
-        if(cursor.moveToFirst()){
-            do{
-                Contacto contacto=new Contacto();
-                contacto.setIdContacto(cursor.getInt(0));
-                contacto.setTipoNot(cursor.getInt(1));
-                contacto.setMensaje(cursor.getString(2));
-                contacto.setTelefono(cursor.getString(3));
-                contacto.setFechaNac(cursor.getString(4));
-                contacto.setNombre(cursor.getString(5));
-                contactos.add(contacto);
-
-
-            }while (cursor.moveToNext());
-        }
-        cursor.close();
-        return contactos;
-    }
-
+    //MÉTODO QUE MODIFICA EL USUARIO EN LA BASE DE DATOS
     public void updateContact(Contacto contacto) {
         SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
         String query="UPDATE miscumples SET" +
@@ -131,6 +89,7 @@ public class DBManager extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(query);
     }
 
+    //METODO QUE OBTIENE TODOS LOS USUARIOS QUE TIENEN FECHA DE NACIMIENTO COINCIDENTE CON HOY
     public ArrayList<Contacto> getBithdayContacts(String fecha) {
         ArrayList <Contacto> contactos=new ArrayList<Contacto>();
         SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
@@ -151,24 +110,4 @@ public class DBManager extends SQLiteOpenHelper {
         cursor.close();
         return contactos;
     }
-
-//    //Método encargado de actualizar contactos de la base de datos
-//    public void updateContactoSQLite(Contacto c) {
-//
-//        openOrCreateDatabase();
-//        ContentValues cv = new ContentValues();
-//
-//        //Al igual que en el método anterior, con el .put indico en que columna se va a hacer el update y le asigno un nuevo valor
-//        cv.put("TipoNotif", c.getTipoNotif());
-//        cv.put("Mensaje", c.getMensaje());
-//        cv.put("Telefono", c.getTelefonos().get(0));
-//        cv.put("FechaNacimiento", c.getFechaNacimiento());
-//        cv.put("Nombre", c.getNombre());
-//
-//        //Aquí se crea la query que va a hacer el udate, extrayendo los datos aanteriores, comprueba con el ID de contacto, que contacto ha de actualizar
-//        db.update("miscumples", cv, "ID = ?", new String[]{String.valueOf(c.getId())});
-//        db.close();
-//    }
-
-
 }

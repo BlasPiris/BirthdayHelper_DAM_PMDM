@@ -50,22 +50,54 @@ public class MainActivity extends AppCompatActivity {
     EditText searchName;
     RecyclerView recyclerView;
     int PERMISSIONS_REQUEST_READ_CONTACTS=100;
-    DBManager dbManager;
 
+    DBManager dbManager;
     AlarmManager alarmManager;
+
+    ArrayList<Contacto> arrayContactos;
+    ArrayList<Contacto> arrayContactosdb;
+    AdapterContactos adapterContactos;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //CREACION DEL CANAL DE NOTIFICACIONES
         createNotificactionChannel();
+
+        //INSTANCIAMOS LA CLASE DE LA BASE DE DATOS
         dbManager=new DBManager(MainActivity.this,null,null,1);
 
+
+        //RECYCLERVIEW
+        recyclerView=findViewById(R.id.recyclerView);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        //REQUERIR PERMISOS PARA OBTENER CONTACTOS
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+        }
+
+        //REQUERIR PERMISOS PARA ENVIAR SMS
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_DENIED) {
+                String[] permissions = {Manifest.permission.SEND_SMS};
+                requestPermissions(permissions, PERMISSIONS_REQUEST_READ_CONTACTS);
+            }
+        }
+
+     getContact();
+
+
+
+        //EDITTEXT QUE BUSCARÁ LOS CONTACTOS POR NOMBRE
         searchName = (EditText) findViewById(R.id.searchName);
         searchName.addTextChangedListener(new TextWatcher() {
-
-            public void afterTextChanged(Editable name) {
-                AdapterContactos adapterContactos=new AdapterContactos(dbManager.getSearchContacts(name));
+            public void afterTextChanged(Editable search) {
+                ArrayList<Contacto> searchContact=searchContact(search.toString());
+                AdapterContactos adapterContactos=new AdapterContactos(searchContact);
                 recyclerView.setAdapter(adapterContactos);
             }
 
@@ -73,42 +105,43 @@ public class MainActivity extends AppCompatActivity {
 
             public void onTextChanged(CharSequence s, int start, int before, int count) {}
         });
-
-        recyclerView=findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-
-
-        //If que da permiso a mi aplicación para leer los contactos de mi movil
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
-        }
-
-        //If que sirve para permitir que mi aplicación mande un sms a un contacto
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_DENIED) {
-                Log.d("permission", "Permisos denegados para mandar SMS");
-                String[] permissions = {Manifest.permission.SEND_SMS};
-                requestPermissions(permissions, PERMISSIONS_REQUEST_READ_CONTACTS);
-            }
-        }
-
-
-
-        ArrayList<Contacto> arrayContactos=getContactList();
-        dbManager.addContacts(arrayContactos);
-        ArrayList<Contacto> arrayContactosdb=dbManager.getContacts();
-        arrayContactos=getFinalList(arrayContactos,arrayContactosdb);
-        AdapterContactos adapterContactos =
-                new AdapterContactos(arrayContactos);
-        recyclerView.setAdapter(adapterContactos);
-
-
-
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        getContact();
+    }
 
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        getContact();
+    }
+
+    //MÉTODO QUE OBTIENE Y ALMACENA  LOS CONTACTOS Y LOS INSERTA EN LOS EN RECYCLERVIEW
+    private void getContact() {
+        arrayContactosdb=dbManager.getContacts();
+
+        if(arrayContactosdb.size()!=0){
+            adapterContactos = new AdapterContactos(arrayContactosdb);
+            recyclerView.setAdapter(adapterContactos);
+            arrayContactos=getContactList();
+            dbManager.addContacts(arrayContactos);
+            ArrayList<Contacto> arrayContactosFinal=
+                    setImage(arrayContactos,arrayContactosdb);
+            arrayContactos=getContactList();
+            adapterContactos = new AdapterContactos(arrayContactosFinal);
+            recyclerView.setAdapter(adapterContactos);
+        }else{
+            arrayContactos=getContactList();
+            adapterContactos = new AdapterContactos(arrayContactos);
+            recyclerView.setAdapter(adapterContactos);
+            dbManager.addContacts(arrayContactos);
+        }
+    }
+
+    //METODO QUE INTRODUCE UN MENÚ EN EL ACTIVITY
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -116,17 +149,15 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    //METODO QUE ABRE EL TIMEPICKER
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-
         mostrarTimePicker();
-
         return super.onOptionsItemSelected(item);
-
     }
 
     private void mostrarTimePicker() {
-        //Construyo un nuevo objeto MaterialTimePicker
+      //CREAMOS EL TIMEPIKER
         MaterialTimePicker   picker = new MaterialTimePicker.Builder()
                 //Le doy formato
                 .setTimeFormat(TimeFormat.CLOCK_24H)
@@ -134,35 +165,32 @@ public class MainActivity extends AppCompatActivity {
                 .setMinute(0)
                 .setTitleText("Hora envío notificaciones")
                 .build();
-        //Muestro la ventana creada
-        picker.show(getSupportFragmentManager(), "notificacionAlarma");
-        //Si clicko en el botón Ok, hará lo siguiente
+
+        //MOSTRAMOS EL TIMEPICKER
+        picker.show(getSupportFragmentManager(), "Hora envio notificiaciones");
+
+        //EVENTO CUANDO PULSEMOS EL BOTON POSITIVO
         picker.addOnPositiveButtonClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Guardo la hora a la que se va a enviar la notificación
+                //GUARDAMOS LA HORA
                 Calendar horaNotificacion = Calendar.getInstance();
                 horaNotificacion.set(Calendar.HOUR_OF_DAY, picker.getHour());
                 horaNotificacion.set(Calendar.MINUTE, picker.getMinute());
                 horaNotificacion.set(Calendar.SECOND, 0);
                 horaNotificacion.set(Calendar.MILLISECOND, 0);
 
-
+                //UTILIZAMOS EL SERVICIO DE ALARMMANAGER, QUE REALIZARÁ LAS FUNICIONES DE NOTIFICACIÓN
                 alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
                 Intent intent=new Intent(MainActivity.this,AlarmReciver.class);
                 PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
                 alarmManager.setExact(AlarmManager.RTC_WAKEUP, horaNotificacion.getTimeInMillis(),pendingIntent);
                 Toast.makeText(MainActivity.this, "ALARMA ACTIVADA", Toast.LENGTH_SHORT).show();
-
-
-
-
             }
         });
     }
 
-
-
+    //MÉTODO QUE DEVUELVE LOS CONTACTOS DEL TELÉFONO
     private ArrayList getContactList() {
         ArrayList<Contacto> contactoArrayList=new ArrayList<>();
         ContentResolver cr = getContentResolver();
@@ -185,33 +213,33 @@ public class MainActivity extends AppCompatActivity {
                     while (pCur.moveToNext()) {
                         String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
 
+                        //OBTENEMOS TODOS LOS DATOS DEL CONTACTO Y LOS GUADAMOS EN UN OBJETO DE LA
+                        //CLASE CONTACTOS
                         Contacto newContacto=new Contacto(Integer.parseInt(id),name,phoneNo);
-                   if(photoUri!=null){
-                       Bitmap foto = null;
-
-                       //Uso el método de clase openContactPhotoInputStream()
-                       try {
-                           InputStream input =
-                                   ContactsContract.Contacts.openContactPhotoInputStream(
-                                           getContentResolver(),
-                                           ContentUris.withAppendedId(
-                                                   ContactsContract.Contacts.CONTENT_URI,
-                                                   Long.parseLong(id))
-                                   );
-                           if (input != null) {
-                               //Dar formato tipo Bitmap a los bytes del BLOB correspondiente a la foto
-                               foto = BitmapFactory.decodeStream(input);
-                               input.close();
-                           }
-
-                       } catch (IOException iox) { /* Manejo de errores */ }
-
-                       System.out.println("HOLA PROBANDO "+name);
-
-                        newContacto.setAvatar(foto);
-                   }
 
 
+
+                        //EN CASO DE QUE EL CONTACTO TENGA IMAGEN, LA CONVERTIMOS Y LA AÑADIMOS AL OBJETO
+                            if(photoUri!=null){
+                                Bitmap foto = null;
+                               try {
+                                   InputStream input =
+                                           ContactsContract.Contacts.openContactPhotoInputStream(
+                                                   getContentResolver(),
+                                                   ContentUris.withAppendedId(
+                                                           ContactsContract.Contacts.CONTENT_URI,
+                                                           Long.parseLong(id))
+                                           );
+                                   if (input != null) {
+                                       foto = BitmapFactory.decodeStream(input);
+                                       input.close();
+                                   }
+
+                               } catch (IOException iox) { }
+                            newContacto.setAvatar(foto);
+                            }
+
+                        //AÑADIMOS EL CONTACTO A UN ARRAY DE CONTACTOS
                             contactoArrayList.add(newContacto);
                     }
                     pCur.close();
@@ -221,19 +249,29 @@ public class MainActivity extends AppCompatActivity {
         if(cur!=null){
             cur.close();
         }
+
+        //DEVOLVEMOS EL ARRAY
         return contactoArrayList;
     }
 
-    private ArrayList<Contacto> getFinalList(ArrayList<Contacto> arrayContactos, ArrayList<Contacto> arrayContactosdb) {
+    //MÉTODO QUE NOS AÑADE LA IMAGEN A LOS DATOS ALMACENADOS DE LA BASE DE DATOS
+    private ArrayList<Contacto> setImage(ArrayList<Contacto> arrayContactos, ArrayList<Contacto> arrayContactosdb) {
 
+    if(arrayContactosdb.size()<=arrayContactos.size()){
         for(int i=0;i<arrayContactosdb.size();i++){
+
             arrayContactosdb.get(i).setAvatar(arrayContactos.get(i).getAvatar());
         }
+    }else{
+        for(int i=0;i<arrayContactos.size();i++){
 
+            arrayContactosdb.get(i).setAvatar(arrayContactos.get(i).getAvatar());
+        }
+    }
         return arrayContactosdb;
     }
 
-
+    //MÉTODO QUE CREA EL CANAL DE NOTIFICACIÓN
     private  void createNotificactionChannel(){
         if (Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
             NotificationChannel channel=new NotificationChannel("birthdayAlert",
@@ -242,8 +280,19 @@ public class MainActivity extends AppCompatActivity {
 
             NotificationManager notificationManager=getSystemService(NotificationManager.class);
             notificationManager.createNotificationChannel(channel);
-
         }
+    }
+
+    //METODO QUE DEVUELVE LOS CONTACTOS QUE TIENEN UN PARECIDO CON LA BUSQUEDA
+    private ArrayList<Contacto> searchContact(String search){
+        ArrayList<Contacto> searchContact=new ArrayList<>();
+
+        for(int i=0;i<arrayContactos.size();i++){
+            if(arrayContactos.get(i).getNombre().contains(search) || arrayContactos.get(i).getTelefono().contains(search)){
+                searchContact.add(arrayContactos.get(i));
+            }
+        }
+        return searchContact;
     }
     
 }
